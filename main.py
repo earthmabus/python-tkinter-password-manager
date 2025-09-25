@@ -2,20 +2,50 @@ import tkinter
 from tkinter import messagebox
 from password_generator import PasswordGenerator
 import pyperclip
-
+import json
 
 # ------------------------- PASSWORD GENERATOR ---------------------------- #
 pwgen = PasswordGenerator()
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
-PASSWORD_FILE = "passwords.txt"
+PASSWORD_FILE = "passwords.json"
 CONFIG_FILE = "config.txt"
 
 def save_password(website, username, password):
     '''appends a new credential into the password file'''
-    with open(PASSWORD_FILE, "a") as file_passwords:
-        file_passwords.write(f"{website} | {username} | {password}\n")
+    # create an entry for the new password data
+    new_entry = { website :
+                      {
+                          "email": username,
+                          "password": password
+                      }
+                  }
+
+    try:
+        # open the existing PASSWORD_FILE and append to it
+        # read the old data
+        with open(PASSWORD_FILE, "r") as file_passwords:
+            data = json.load(file_passwords)
+
+        # update the old data and update it
+        with open(PASSWORD_FILE, "w") as file_passwords:
+            data.update(new_entry)
+            json.dump(data, file_passwords, indent=4)
+    except FileNotFoundError:
+        # we ended up here since PASSWORD_FILE does not exist
+        # create PASSWORD_FILE and store this as the first entry
+        with open(PASSWORD_FILE, "w") as file_passwords:
+            data = {}
+            data.update(new_entry)
+            json.dump(data, file_passwords, indent=4)
+
+def load_passwords():
+    '''loads all of the passwords from the password file'''
+    with open(PASSWORD_FILE, "r") as file_passwords:
+        data = json.load(file_passwords)
+        print(type(data))
+        print(data)
 
 def get_default_username():
     '''gets the default username from config.txt or returns an empty string if file does not exist'''
@@ -40,12 +70,16 @@ photo_lock = tkinter.PhotoImage(file="logo.png")
 canvas.create_image(100, 100, image=photo_lock)
 canvas.grid(row=0, column=1)
 
-# create a row for website
+# create a row for website + search button
 label_website= tkinter.Label(text="Website")
 label_website.grid(row=1, column=0)
-input_website = tkinter.Entry(width=35)
-input_website.grid(row=1, column=1, columnspan=2)
+input_website = tkinter.Entry(width=24)
+input_website.grid(row=1, column=1)
 input_website.focus()
+def button_search_password_click():
+    load_passwords()
+button_generate_password = tkinter.Button(text="Search", command=button_search_password_click)
+button_generate_password.grid(row=1, column=2)
 
 # create a row for email/username
 label_username = tkinter.Label(text="Email/Username")
@@ -88,12 +122,10 @@ def button_add_click():
         return
 
     # double check that the user wants to save the credentials
-    is_ok_to_save = messagebox.askokcancel(title=input_website.get(), message=f"These are the credentials\nusername: {input_username.get()}\npassword: {input_password.get()}\n")
-    if is_ok_to_save:
-        save_password(input_website.get(), input_username.get(), input_password.get())
-        input_website.delete(0, tkinter.END)
-        input_password.delete(0, tkinter.END)
-        input_website.focus()
+    save_password(input_website.get(), input_username.get(), input_password.get())
+    input_website.delete(0, tkinter.END)
+    input_password.delete(0, tkinter.END)
+    input_website.focus()
 button_add = tkinter.Button(text="Add", width=32, command=button_add_click)
 button_add.grid(row=4, column=1, columnspan=2)
 
