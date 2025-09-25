@@ -7,7 +7,7 @@ import json
 # ------------------------- PASSWORD GENERATOR ---------------------------- #
 pwgen = PasswordGenerator()
 
-# ---------------------------- SAVE PASSWORD ------------------------------- #
+# -------------------------- MANAGE PASSWORDS ----------------------------- #
 
 PASSWORD_FILE = "passwords.json"
 CONFIG_FILE = "config.txt"
@@ -41,11 +41,13 @@ def save_password(website, username, password):
             json.dump(data, file_passwords, indent=4)
 
 def load_passwords():
-    '''loads all of the passwords from the password file'''
-    with open(PASSWORD_FILE, "r") as file_passwords:
-        data = json.load(file_passwords)
-        print(type(data))
-        print(data)
+    '''loads all the accounts from the password file'''
+    try:
+        with open(PASSWORD_FILE, "r") as file_passwords:
+            data = json.load(file_passwords)
+            return data
+    except FileNotFoundError:
+        return {}
 
 def get_default_username():
     '''gets the default username from config.txt or returns an empty string if file does not exist'''
@@ -77,7 +79,14 @@ input_website = tkinter.Entry(width=24)
 input_website.grid(row=1, column=1)
 input_website.focus()
 def button_search_password_click():
-    load_passwords()
+    accounts = load_passwords()
+    try:
+        user_and_pass = accounts[input_website.get()]
+        email = user_and_pass['email']
+        password = user_and_pass['password']
+        messagebox.showinfo(input_website.get(), f"Email: {email}\nPassword: {password}")
+    except KeyError:
+        messagebox.showerror(input_website.get(), f"No credentials have been stored for \"{input_website.get()}\"")
 button_generate_password = tkinter.Button(text="Search", command=button_search_password_click)
 button_generate_password.grid(row=1, column=2)
 
@@ -128,8 +137,6 @@ def button_add_click():
     input_website.focus()
 button_add = tkinter.Button(text="Add", width=32, command=button_add_click)
 button_add.grid(row=4, column=1, columnspan=2)
-
-
 
 # loop for user input
 window.mainloop()
